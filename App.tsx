@@ -26,6 +26,7 @@ import GalleryImg from "./assets/gallery.png";
 import CloseIcon from "./assets/close.png";
 import { BlurView } from "expo-blur";
 import fs from "react-native-fs";
+import { useKeepAwake } from "expo-keep-awake";
 
 const dateFormatOptions = {
   year: "numeric",
@@ -33,10 +34,10 @@ const dateFormatOptions = {
   day: "numeric",
   hour: "numeric",
   minute: "numeric",
-  // second: "numeric",
 } as const;
 
 const App = () => {
+  useKeepAwake();
   const [isRecording, setIsRecording] = useState(false);
   const [stopRecordingVisible, setStopRecordingVisible] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -50,10 +51,6 @@ const App = () => {
   const format = useCameraFormat(device, [
     { videoHdr: true, fps: 60, videoResolution: { width: 1920, height: 1080 } },
   ]);
-  const videoDir = FileSystem.documentDirectory?.replace(
-    "Documents",
-    "tmp/ReactNative"
-  );
 
   const startRecording = async () => {
     setIsRecording(true);
