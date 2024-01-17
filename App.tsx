@@ -61,10 +61,10 @@ const App = () => {
       cameraRef.current.startRecording({
         videoBitRate: "high",
         onRecordingFinished: (video) => {
-          const newName = new Date().toLocaleDateString(
-            undefined,
-            dateFormatOptions
-          );
+          const newName = new Date().toLocaleDateString(undefined, {
+            ...dateFormatOptions,
+            second: "numeric",
+          });
 
           fs.moveFile(
             video.path,
