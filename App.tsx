@@ -27,6 +27,7 @@ import CloseIcon from "./assets/close.png";
 import { BlurView } from "expo-blur";
 import fs from "react-native-fs";
 import { useKeepAwake } from "expo-keep-awake";
+import PrefersHomeIndicatorAutoHidden from "react-native-home-indicator";
 
 const dateFormatOptions = {
   year: "numeric",
@@ -128,6 +129,7 @@ const App = () => {
       }}
     >
       <StatusBar style="dark" hidden />
+      <PrefersHomeIndicatorAutoHidden />
       <Camera
         isActive
         video
