@@ -6,30 +6,27 @@ import {
   FlatList,
   useWindowDimensions,
   Alert,
+  Share,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { BlurView } from "expo-blur";
-import * as FileSystem from "expo-file-system";
 import { useEffect, useState } from "react";
-import { Share } from "react-native";
+import RNFS from "react-native-fs";
 import { dateFormatOptions } from "../shared/constants";
 
 const Gallery = () => {
-  const [files, setFiles] = useState<FileSystem.FileInfo[]>([]);
-  const [preview, setPreview] = useState<FileSystem.FileInfo>();
+  const [files, setFiles] = useState<RNFS.ReadDirItem[]>([]);
+  const [preview, setPreview] = useState<RNFS.ReadDirItem | null>(null);
   const { width } = useWindowDimensions();
 
   const readFiles = async () => {
-    const files = await FileSystem.readDirectoryAsync(
-      FileSystem.documentDirectory!
-    );
-    const filesInfo = await Promise.all(
-      files.map((file) =>
-        FileSystem.getInfoAsync(FileSystem.documentDirectory + file)
-      )
-    );
-
-    return filesInfo;
+    try {
+      const files = await RNFS.readDir(RNFS.DocumentDirectoryPath);
+      return files;
+    } catch (error) {
+      console.error("Error reading files: ", error);
+      return [];
+    }
   };
 
   const formatFileSize = (size: number) => {
@@ -42,8 +39,8 @@ const Gallery = () => {
   };
 
   const modificationTime =
-    preview && "modificationTime" in preview ? preview!.modificationTime : null;
-  const size = preview && "size" in preview ? preview!.size : null;
+    preview && preview.mtime ? preview.mtime.getTime() : null;
+  const size = preview ? preview.size : null;
 
   useEffect(() => {
     readFiles().then(setFiles);
@@ -72,7 +69,7 @@ const Gallery = () => {
             style={{ padding: 1.5 }}
           >
             <Video
-              source={{ uri: item.uri }}
+              source={{ uri: "file://" + item.path }}
               style={{
                 width: width / 4 - padding * 2,
                 height: width / 4 - padding * 2,
@@ -92,7 +89,7 @@ const Gallery = () => {
           }}
         >
           <TouchableOpacity
-            onPress={() => setPreview(undefined)}
+            onPress={() => setPreview(null)}
             style={{
               flexGrow: 1,
               display: "flex",
@@ -112,7 +109,7 @@ const Gallery = () => {
               }}
             >
               <Video
-                source={{ uri: preview.uri }}
+                source={{ uri: "file://" + preview.path }}
                 style={{ flexGrow: 1 }}
                 useNativeControls
                 resizeMode={ResizeMode.COVER}
@@ -185,10 +182,14 @@ const Gallery = () => {
                         {
                           text: "Delete",
                           onPress: () => {
-                            FileSystem.deleteAsync(preview.uri).then(() => {
-                              setPreview(undefined);
-                              readFiles().then(setFiles);
-                            });
+                            RNFS.unlink(preview.path)
+                              .then(() => {
+                                setPreview(null);
+                                readFiles().then(setFiles);
+                              })
+                              .catch((err) =>
+                                console.error("Error deleting file: ", err)
+                              );
                           },
                           style: "destructive",
                         },
@@ -218,8 +219,8 @@ const Gallery = () => {
                     borderRadius: 10,
                   }}
                   onPress={() =>
-                    Share.share({ url: preview.uri }).then(() =>
-                      setPreview(undefined)
+                    Share.share({ url: "file://" + preview.path }).then(() =>
+                      setPreview(null)
                     )
                   }
                 >
